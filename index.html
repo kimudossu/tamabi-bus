@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<title>타마비 버스 남은시간</title>
+<style>
+    :root{
+      --bg: #0f1221; --card: #161a2f; --muted: #8c93b2; --text: #e8ecff;
+      --accent: #7aa2ff; --accent-2: #6df3c1; --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Apple SD Gothic Neo, sans-serif; color:var(--text); background:
+      radial-gradient(1000px 500px at 10% -10%, #1b206a22, transparent),
+      radial-gradient(900px 400px at 120% -10%, #23d5ab22, transparent),
+      linear-gradient(180deg, #0c0f1c, var(--bg)); min-height:100%;}
+    header{position:sticky; top:0; z-index:5; backdrop-filter:saturate(120%) blur(6px); background:#0c0f1c88; border-bottom:1px solid #ffffff12}
+    .container{max-width:960px; margin:0 auto; padding:18px 16px}
+    .brand{display:flex; align-items:center; justify-content:space-between; gap:12px; font-weight:800; letter-spacing:.3px}
+    .brand-left{display:flex; align-items:center; gap:12px}
+    .brand .logo{width:36px;height:36px; border-radius:12px; background: conic-gradient(from 220deg, var(--accent), var(--accent-2)); box-shadow: var(--shadow)}
+    .rev-pill{font-weight:700; font-size:.82rem; padding:6px 10px; border-radius:999px; background:#ffffff12; border:1px solid #ffffff22}
+    main{padding:24px 16px}
+    .card{background:var(--card); border:1px solid #ffffff10; border-radius:var(--radius); box-shadow:var(--shadow)}
+
+    /* Home */
+    #home{max-width:960px; margin:0 auto; display:grid; gap:18px}
+    .dest-grid{display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px}
+    @media (max-width:760px){.dest-grid{grid-template-columns:1fr}}
+    .dest-btn{border:0; padding:18px 16px; border-radius:16px; cursor:pointer; width:100%; text-align:left; position:relative; overflow:hidden; background:linear-gradient(180deg, #1b2141, #151936); color:var(--text); box-shadow:var(--shadow); transition: transform .12s ease, box-shadow .2s ease;}
+    .dest-btn:hover{transform: translateY(-2px)}
+    .dest-title{font-size:1.2rem; font-weight:800}
+    .dest-sub{font-size:.9rem; color:var(--muted)}
+    .route-info{ font-size:0.85rem; color: var(--muted); margin-top:6px }
+
+    /* Detail / countdown */
+    #detail{max-width:960px; margin:18px auto 0; display:none; gap:18px}
+    .detail-head{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px}
+    .pill{display:inline-flex; align-items:center; gap:8px; background:#ffffff12; border:1px solid #ffffff1f; padding:8px 12px; border-radius:999px}
+    .pill b{letter-spacing:.4px}
+
+    .mode{display:flex; gap:8px; align-items:center; background:#0e1228; border:1px solid #ffffff14; padding:6px; border-radius:999px}
+    .mode button{background:transparent; border:0; color:var(--muted); padding:8px 14px; border-radius:999px; cursor:pointer; font-weight:700}
+    .mode button.active{color:#0b1731; background:linear-gradient(180deg, var(--accent-2), #9af3d7)}
+
+    .cnt-body{display:grid; grid-template-columns:1.1fr .9fr; gap:18px; padding:0 16px 16px}
+    @media (max-width:880px){.cnt-body{grid-template-columns:1fr}}
+
+    .count-card{padding:18px; display:grid; gap:14px}
+    .countdown{display:flex; align-items:baseline; gap:10px}
+    .countdown .big{font-size:3.6rem; font-weight:900; letter-spacing:1px}
+    .countdown .label{color:var(--muted); font-weight:700}
+    .next-time{font-size:1.1rem; color:#cdd7ff}
+    .meta{color:var(--muted); font-size:.9rem}
+
+    .routes-wrap{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 16px 0 }
+    .route-chip{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#ffffff12; border:1px solid #ffffff22; font-size:.85rem }
+    .route-code{ font-weight:900; font-variant-numeric: tabular-nums }
+    .route-name{ color:var(--muted) }
+
+    .aside{padding:18px; display:grid; gap:12px}
+    .aside h3{margin:0; font-size:1rem}
+    .aside .row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px dashed #ffffff1a}
+    .aside .row:first-child{border-top:0}
+
+    .actions{display:flex; gap:10px}
+    .btn{border:0; cursor:pointer; padding:12px 14px; border-radius:12px; font-weight:800}
+    .btn.primary{background:linear-gradient(180deg, var(--accent), #5d84ff); color:#0a1027}
+    .btn.ghost{background:#ffffff12; color:var(--text); border:1px solid #ffffff22}
+
+    footer{margin-top:26px; border-top:1px solid #ffffff12}
+    footer .container{padding:14px 16px; color:var(--muted); font-size:.92rem; display:flex; justify-content:space-between; align-items:center}
+
+    /* Modal timetable */
+    .modal-overlay{position:fixed; inset:0; display:none; place-items:center; z-index:40;}
+    .blurred{filter: blur(4px) saturate(80%); pointer-events:none; user-select:none}
+    .backdrop{position:absolute; inset:0; background:#050814bb}
+    .modal{position:relative; width:min(720px, 92vw); max-height:80vh; overflow:hidden; border-radius:20px; background:linear-gradient(180deg,#1a1f3e,#141832); border:1px solid #ffffff22; box-shadow: var(--shadow); display:grid; grid-template-rows:auto 1fr auto}
+    .modal header{position:sticky; top:0; background:#121633ee; border-bottom:1px solid #ffffff1f}
+    .modal header .container{padding:14px 16px}
+    .modal h3{margin:0; font-size:1.1rem}
+    .modal .content{padding:12px 16px 8px; overflow:auto}
+    .modal table{width:100%; border-collapse:collapse; font-variant-numeric: tabular-nums}
+    .modal th, .modal td{padding:10px 10px; border-bottom:1px solid #ffffff10; text-align:left}
+    .modal th{position:sticky; top:0; background:#11163c; z-index:1}
+    .modal tfoot td{border-top:1px solid #ffffff18}
+    .close-x{position:absolute; right:10px; top:10px; border:0; background:#ffffff14; color:var(--text); border:1px solid #ffffff30; width:36px; height:36px; border-radius:10px; cursor:pointer; font-weight:900}
+  
+        .brand .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.6rem;
+        }
+        </style>
+</head>
+<body>
+<header>
+<div class="container brand">
+<div class="brand-left">
+<div aria-hidden="true" class="logo">多摩美</div>
+<div>
+<div style="font-size:1.05rem; opacity:.9">타마비 버스 남은시간</div>
+</div>
+</div>
+<div class="rev-pill" id="rev-header">개정일 -</div>
+</div>
+</header>
+<main>
+<!-- 메인 페이지 -->
+<section class="container" id="home">
+<div class="card" style="padding:18px">
+<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
+<div style="display:grid; gap:4px">
+<div style="font-size:1.35rem; font-weight:900">어디로 가시나요?</div>
+<div style="color:var(--muted); font-size:.95rem">행선지를 선택하면 실시간 남은 시간을 보여드립니다.</div>
+</div>
+<div class="meta" id="rev-home">개정일 -</div>
+</div>
+</div>
+<div class="dest-grid">
+<button class="dest-btn" data-dest="hashimoto">
+<div class="dest-title">하시모토 행</div>
+<div class="dest-sub">Hashimoto</div>
+<div class="route-info">橋７５ · 橋７８ · 橋本駅北口行</div>
+</button>
+<button class="dest-btn" data-dest="minami_osawa">
+<div class="dest-title">미나미 오사와 행</div>
+<div class="dest-sub">Minami-Ōsawa</div>
+<div class="route-info">南６１ · 南６２ · 南大沢駅行</div>
+</button>
+<button class="dest-btn" data-dest="hachioji">
+<div class="dest-title">하치오지 행</div>
+<div class="dest-sub">Hachiōji</div>
+<div class="route-info">八７０ · 八王子駅南口行</div>
+</button>
+</div>
+</section>
+<!-- 시간 확인 페이지 -->
+<section class="container" id="detail">
+<div class="card">
+<div class="detail-head">
+<div aria-live="polite" class="pill">
+<span style="opacity:.75">선택한 행선지</span>
+<b id="chosen-dest">-</b>
+</div>
+<div aria-label="운행 요일 선택" class="mode" role="tablist">
+<button aria-selected="true" class="active" id="btn-weekday" role="tab">평일</button>
+<button aria-selected="false" id="btn-saturday" role="tab">토요일</button>
+<button aria-selected="false" id="btn-holiday" role="tab">일/휴일</button>
+</div>
+</div>
+<div class="cnt-body">
+<div class="count-card card">
+<div style="display:flex; align-items:center; justify-content:space-between">
+<div style="font-weight:800">가장 가까운 버스</div>
+<div aria-live="polite" class="meta" id="now-time">현재 시각 -</div>
+</div>
+<div aria-label="운행계통" class="routes-wrap" id="route-chips"></div>
+<div aria-live="polite" class="countdown">
+<div class="big" id="remain-mm">--</div><div class="label">분</div>
+<div class="big" id="remain-ss">--</div><div class="label">초 남음</div>
+</div>
+<div class="next-time">출발: <b id="next1-time">--:--</b> <span class="meta" id="next1-daytag"></span></div>
+<div class="meta" id="status-msg"></div>
+<div class="meta" id="rev-detail">개정일 -</div>
+<div class="actions">
+<button class="btn primary" id="btn-open-timetable">전체 시간표 보기</button>
+<button class="btn ghost" id="btn-back">다른 행선지 선택</button>
+</div>
+</div>
+<aside class="aside card">
+<h3>다음 버스</h3>
+<div class="row"><span>2순위</span><b id="next2-time">--:--</b> <span class="meta" id="next2-daytag"></span></div>
+<div class="row"><span>이후</span><span class="meta" id="queue-more">—</span></div>
+</aside>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="container">
+<span>ⓒ 2025 Kim Dohyeon</span>
+<span class="meta" id="rev-footer">개정일 -</span>
+</div>
+</footer>
+<!-- 전체 시간표 모달 -->
+<div class="modal-overlay" id="modal">
+<div class="backdrop"></div>
+<div class="modal">
+<header>
+<div class="container" style="display:flex; align-items:center; gap:10px; justify-content:space-between">
+<h3 id="modal-title">전체 시간표</h3>
+<div style="display:flex; gap:8px; align-items:center">
+<div aria-label="시간표 요일 선택" class="mode" role="tablist">
+<button class="active" id="m-weekday">평일</button>
+<button id="m-saturday">토요일</button>
+<button id="m-holiday">일/휴일</button>
+</div>
+<div class="rev-pill" id="rev-modal">개정일 -</div>
+</div>
+</div>
+</header>
+<div class="content">
+<table id="timetable">
+<thead>
+<tr><th>시간</th><th>분</th></tr>
+</thead>
+<tbody></tbody>
+<tfoot>
+<tr><td class="meta" colspan="2"></td></tr>
+</tfoot>
+</table>
+</div>
+<button aria-label="닫기" class="close-x" id="modal-close">✕</button>
+</div>
+</div>
+<script>
+    /**
+     * 📅 개정 정보 (모든 화면에서 공통 표시)
+     */
+    const REVISION = {
+      date: '2025-08-11',  // YYYY-MM-DD
+      note: '2025-08-11 개정'
+    };
+
+    /**
+     * ✏️ 시간표 데이터 + 운행계통(routes)
+     *  - 요일 구분: weekday / saturday / holiday
+     */
+    const TIMETABLE = {
+      hashimoto: {
+        label: '하시모토 행',
+        routes: [
+        { code: '橋７５', name: '橋本駅北口行' },
+        { code: '橋７８', name: '橋本駅北口行' }
+        ],
+        byRoute: {
+          '橋７５': {
+            weekday: [ '08:25','09:10','09:40','10:10','10:40','11:10','11:40','12:10','12:40','13:10','13:40','14:10','14:40','15:10','15:40','16:10','16:40','17:10','17:40','18:10','18:40','19:10' ],
+            saturday:[ '08:25','09:10','09:40','10:10','10:40','11:10','11:40','12:10','12:40','13:10','13:40','14:10','14:40','15:10','15:40','16:10','16:40','17:10','17:40','18:10','18:40','19:10' ],
+            holiday: [ '08:25','09:10','09:40','10:10','10:40','11:10','11:40','12:10','12:40','13:10','13:40','14:10','14:40','15:10','15:40','16:10','16:40','17:10','17:40','18:10','18:40','19:10' ],
+          },
+          '橋７８': {
+            weekday: [ '06:20','07:00','07:30','08:35','09:35','10:30','11:30','12:30','13:30','14:30','15:30' ],
+            saturday:[ '06:20','07:00','07:30','08:35','09:35','10:30','11:30','12:30','13:30','14:30','15:30' ],
+            holiday: [ '06:20','07:00','07:30','08:35','09:35','10:30','11:30','12:30','13:30','14:30','15:30' ],
+          }
+        },
+        // overall(ALL)은 아래 IIFE에서 자동 생성
+        weekday: [],
+        saturday: [],
+        holiday: []
+      },
+      
+      minami_osawa: {
+        label: '미나미 오사와 행',
+        routes: [ { code: '南６１', name: '南大沢駅行' }, { code: '南６２', name: '南大沢駅行' } ],
+        byRoute: {
+          '南６１': {
+            weekday: [ '08:44','09:24','10:04','10:44','11:24','12:04','12:44'],
+            saturday:[ 
+            '09:12','09:55','10:35','11:15','11:55','12:35', ],
+            holiday: [ '09:12','09:55','10:35','11:15','11:55','12:35', ]
+          },
+          '南６２': {
+            weekday: [ '13:27','14:07','14:47','15:27','16:07','16:27','16:47','17:07','17:27','17:48','18:08','18:28','18:49','19:08','19:31' ],
+            saturday:[ '13:15','13:58','14:38','15:18','15:58','16:38','17:18','17:58','18:18','18:38','18:58','19:18','19:38' ],
+            holiday: [ '13:15','13:58','14:38','15:18','15:58','16:38','17:18','17:58','18:18','18:38','18:58','19:18','19:38' ]
+          }
+        },
+        // overall(ALL) 시간표는 아래에서 자동 생성됨
+        weekday: [],
+        saturday: [],
+        holiday: []
+      },
+      hachioji: {
+        label: '하치오지 행',
+        routes: [ { code: '八７０', name: '八王子駅南口行' } ],
+        weekday: [ '08:30','09:30','10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30' ],
+        saturday:[ '08:30','09:30','10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30' ],
+        holiday: [ '08:30','09:30','10:30','11:30','12:30','13:30','14:30','15:30','16:30','17:30','18:30' ],
+      }
+    };
+
+    // 미나미오사와 overall 생성 (요일별로 byRoute 합집합 후 정렬)
+    (function buildMinamiOsawaOverall(){
+      const m = TIMETABLE.minami_osawa;
+      const merge = (a,b) => [...new Set([...a,...b])].sort();
+      m.weekday  = merge(m.byRoute['南６１'].weekday,  m.byRoute['南６２'].weekday);
+      m.saturday = merge(m.byRoute['南６１'].saturday, m.byRoute['南６２'].saturday);
+      m.holiday  = merge(m.byRoute['南６１'].holiday,  m.byRoute['南６２'].holiday);
+    })();
+
+    // 하시모토 overall 생성 (요일별로 byRoute 합집합 후 정렬)
+    (function buildHashimotoOverall(){
+      const h = TIMETABLE.hashimoto;
+      const merge = (a,b) => [...new Set([...a,...b])].sort();
+      h.weekday  = merge(h.byRoute['橋７５'].weekday,  h.byRoute['橋７８'].weekday);
+      h.saturday = merge(h.byRoute['橋７５'].saturday, h.byRoute['橋７８'].saturday);
+      h.holiday  = merge(h.byRoute['橋７５'].holiday,  h.byRoute['橋７８'].holiday);
+    })();
+
+    // 상태
+    let state = { destKey: null, service: 'weekday', intervalId: null, queue: [], activeRoute: 'ALL' };
+
+    // 요소 참조
+    const elHome = document.getElementById('home');
+    const elDetail = document.getElementById('detail');
+    const chosenDest = document.getElementById('chosen-dest');
+
+    const btnWeekday = document.getElementById('btn-weekday');
+    const btnSaturday = document.getElementById('btn-saturday');
+    const btnHoliday  = document.getElementById('btn-holiday');
+
+    const remainMM = document.getElementById('remain-mm');
+    const remainSS = document.getElementById('remain-ss');
+    const nowTime = document.getElementById('now-time');
+    const next1Time = document.getElementById('next1-time');
+    const next2Time = document.getElementById('next2-time');
+    const next1DayTag = document.getElementById('next1-daytag');
+    const next2DayTag = document.getElementById('next2-daytag');
+    const queueMore = document.getElementById('queue-more');
+    const statusMsg = document.getElementById('status-msg');
+    const btnBack = document.getElementById('btn-back');
+    const btnOpenTT = document.getElementById('btn-open-timetable');
+
+    // 개정일 영역
+    const revHeader = document.getElementById('rev-header');
+    const revHome   = document.getElementById('rev-home');
+    const revDetail = document.getElementById('rev-detail');
+    const revFooter = document.getElementById('rev-footer');
+    const revModal  = document.getElementById('rev-modal');
+
+    // 모달
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const mWeekday = document.getElementById('m-weekday');
+    const mSaturday= document.getElementById('m-saturday');
+    const mHoliday = document.getElementById('m-holiday');
+    const modalClose = document.getElementById('modal-close');
+    const tableBody = document.querySelector('#timetable tbody');
+
+    // 유틸
+    const pad2 = n => String(n).padStart(2,'0');
+    const fmtHM = d => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    const parseToday = (hhmm, baseDate=new Date()) => { const [h,m] = hhmm.split(':').map(Number); const d = new Date(baseDate); d.setHours(h, m, 0, 0); return d; };
+
+    const SERVICE_LABEL = { weekday: '평일', saturday: '토요일', holiday: '일/휴일' };
+
+    function decideDefaultService(){
+      const day = new Date().getDay(); // 0=일 6=토
+      if (day === 6) return 'saturday';
+      if (day === 0) return 'holiday';
+      return 'weekday';
+    }
+
+    function upcomingQueue(timesHM, now=new Date()){
+      const todayList = timesHM.map(t => parseToday(t, now)).filter(d => d.getTime() >= now.getTime());
+      if (todayList.length >= 3) return todayList;
+      const tomorrowBase = new Date(now); tomorrowBase.setDate(now.getDate()+1);
+      const tmList = timesHM.map(t => parseToday(t, tomorrowBase));
+      return todayList.concat(tmList);
+    }
+
+    function updateServiceButtons(){
+      const map = [
+        [btnWeekday,  state.service==='weekday'],
+        [btnSaturday, state.service==='saturday'],
+        [btnHoliday,  state.service==='holiday']
+      ];
+      map.forEach(([btn, on])=>{ btn.classList.toggle('active', on); btn.setAttribute('aria-selected', on? 'true':'false'); });
+      const mmap = [
+        [mWeekday,  state.service==='weekday'],
+        [mSaturday, state.service==='saturday'],
+        [mHoliday,  state.service==='holiday']
+      ];
+      mmap.forEach(([btn, on])=>{ if(!btn) return; btn.classList.toggle('active', on); });
+    }
+
+    // 운행계통 칩 렌더 + 필터
+    function renderRoutes(){
+      const wrap = document.getElementById('route-chips');
+      const cfg = TIMETABLE[state.destKey];
+      wrap.innerHTML = '';
+      if (!cfg?.routes?.length){ wrap.style.display = 'none'; return; }
+      wrap.style.display = 'flex';
+
+      // 전체 칩
+      const all = document.createElement('div');
+      all.className = 'route-chip';
+      all.innerHTML = `<span class="route-code">ALL</span><span class="route-name">모든 계통</span>`;
+      styleActive(all, state.activeRoute==='ALL');
+      all.onclick = () => { state.activeRoute='ALL'; recalcQueue(); renderRoutes(); };
+      wrap.appendChild(all);
+
+      // 개별 계통 칩
+      cfg.routes.forEach(r => {
+        const chip = document.createElement('div');
+        chip.className = 'route-chip';
+        chip.innerHTML = `<span class="route-code">${r.code}</span><span class="route-name">${r.name}</span>`;
+        styleActive(chip, state.activeRoute===r.code);
+        chip.onclick = () => { state.activeRoute=r.code; recalcQueue(); renderRoutes(); };
+        wrap.appendChild(chip);
+      });
+    }
+
+    function styleActive(el, active){
+      el.style.borderColor = active ? '#7aa2ff' : '#ffffff22';
+      el.style.boxShadow = active ? '0 0 0 2px #7aa2ff33 inset' : 'none';
+    }
+
+    function renderQueue(){
+      const list = state.queue; const now = new Date();
+      nowTime.textContent = `현재 시각 ${fmtHM(now)}:${pad2(now.getSeconds())}`;
+      if (!list || list.length === 0){
+        next1Time.textContent = '--:--'; next2Time.textContent = '--:--'; statusMsg.textContent = '시간표가 비어 있습니다.';
+        remainMM.textContent = '--'; remainSS.textContent = '--'; queueMore.textContent = '—'; next1DayTag.textContent = ''; next2DayTag.textContent = ''; return;
+      }
+      const first = list[0]; const second = list[1];
+      next1Time.textContent = fmtHM(first); next2Time.textContent = second ? fmtHM(second) : '--:--';
+      const todayDate = new Date().getDate();
+      next1DayTag.textContent = (first.getDate()!==todayDate) ? '(내일)' : '';
+      next2DayTag.textContent = (second && second.getDate()!==todayDate) ? '(내일)' : '';
+      if (list.length > 2){ const tail = list.slice(2,6).map(fmtHM).join(', '); queueMore.textContent = tail || '—'; } else { queueMore.textContent = '—'; }
+      const destLabel = TIMETABLE[state.destKey]?.label ?? '';
+      const routeTag = state.activeRoute==='ALL' ? '모든 계통' : `${state.activeRoute}`;
+      statusMsg.textContent = `${destLabel} · ${SERVICE_LABEL[state.service]} · ${routeTag}`;
+    }
+
+    function startCountdown(){
+      stopCountdown();
+      state.intervalId = setInterval(() => {
+        const now = new Date(); nowTime.textContent = `현재 시각 ${fmtHM(now)}:${pad2(now.getSeconds())}`;
+        if (!state.queue.length){ remainMM.textContent = '--'; remainSS.textContent = '--'; return; }
+        const target = state.queue[0]; let diff = target.getTime() - now.getTime();
+        if (diff <= 0){ recalcQueue(); return; }
+        const totalSec = Math.floor(diff / 1000); const mm = Math.floor(totalSec / 60); const ss = totalSec % 60;
+        remainMM.textContent = pad2(mm); remainSS.textContent = pad2(ss);
+      }, 1000);
+    }
+    function stopCountdown(){ if (state.intervalId){ clearInterval(state.intervalId); state.intervalId = null; } }
+
+    function getTimesForState(){
+      const cfg = TIMETABLE[state.destKey];
+      const mode = state.service; // 'weekday'|'saturday'|'holiday'
+      if (state.activeRoute !== 'ALL' && cfg?.byRoute && cfg.byRoute[state.activeRoute]){
+        return cfg.byRoute[state.activeRoute][mode] || [];
+      }
+      return (cfg && cfg[mode]) ? cfg[mode] : [];
+    }
+
+    function recalcQueue(){ const listHM = getTimesForState(); state.queue = upcomingQueue(listHM, new Date()); renderQueue(); }
+
+    function goDetail(destKey){
+      state.destKey = destKey; state.activeRoute = 'ALL';
+      chosenDest.textContent = TIMETABLE[destKey]?.label || '-';
+      state.service = decideDefaultService(); updateServiceButtons();
+      renderRoutes(); recalcQueue(); startCountdown();
+      elHome.style.display = 'none'; elDetail.style.display = 'grid';
+    }
+
+    function goHome(){ stopCountdown(); elDetail.style.display = 'none'; elHome.style.display = 'grid'; }
+
+    // 시간표 모달 렌더링
+    function openModal(){
+      const key = state.destKey; const label = TIMETABLE[key]?.label ?? '';
+      modalTitle.textContent = `${label} · 전체 시간표 (${state.activeRoute==='ALL' ? '모든 계통' : state.activeRoute})`;
+      updateServiceButtons();
+      renderTable();
+      document.querySelector('main').classList.add('blurred'); document.querySelector('header').classList.add('blurred'); document.querySelector('footer').classList.add('blurred');
+      modal.style.display = 'grid';
+    }
+    function closeModal(){ modal.style.display = 'none'; document.querySelector('main').classList.remove('blurred'); document.querySelector('header').classList.remove('blurred'); document.querySelector('footer').classList.remove('blurred'); }
+
+    function renderTable(){
+      const times = getTimesForState().slice();
+      tableBody.innerHTML = '';
+      const byHour = {};
+      for (const t of times){ const [h, m] = t.split(':'); if (!byHour[h]) byHour[h] = []; byHour[h].push(m); }
+      Object.keys(byHour).sort((a,b)=>Number(a)-Number(b)).forEach(hh => {
+        const mins = byHour[hh].map(x=>x.padStart(2,'0')).sort((a,b)=>Number(a)-Number(b)).join(', ');
+        const tr = document.createElement('tr'); const tdH = document.createElement('td'); tdH.textContent = hh.padStart(2,'0'); const tdM = document.createElement('td'); tdM.textContent = mins; tr.appendChild(tdH); tr.appendChild(tdM); tableBody.appendChild(tr);
+      });
+      if (!times.length){ const tr = document.createElement('tr'); const td = document.createElement('td'); td.colSpan = 2; td.textContent = '시간표 데이터가 없습니다.'; tr.appendChild(td); tableBody.appendChild(tr); }
+    }
+
+    function renderRevisionEverywhere(){
+      const text = `개정일 ${REVISION.date}`;
+      [revHeader, revHome, revDetail, revFooter, revModal].forEach(el=>{ if(el) el.textContent = text; });
+    }
+
+    // 이벤트 바인딩
+    document.querySelectorAll('.dest-btn').forEach(btn => { btn.addEventListener('click', () => goDetail(btn.dataset.dest)); });
+
+    btnWeekday.addEventListener('click', () => { state.service = 'weekday'; updateServiceButtons(); recalcQueue(); });
+    btnSaturday.addEventListener('click', () => { state.service = 'saturday'; updateServiceButtons(); recalcQueue(); });
+    btnHoliday .addEventListener('click', () => { state.service = 'holiday';  updateServiceButtons(); recalcQueue(); });
+
+    document.getElementById('btn-back').addEventListener('click', goHome);
+    document.getElementById('btn-open-timetable').addEventListener('click', openModal);
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.querySelector('#modal .backdrop').addEventListener('click', closeModal);
+
+    mWeekday.addEventListener('click', () => { state.service='weekday'; updateServiceButtons(); renderTable(); });
+    mSaturday.addEventListener('click', () => { state.service='saturday'; updateServiceButtons(); renderTable(); });
+    mHoliday .addEventListener('click', () => { state.service='holiday';  updateServiceButtons(); renderTable(); });
+
+    // 접근성: ESC로 모달 닫기
+    window.addEventListener('keydown', (e)=>{ if (e.key === 'Escape' && modal.style.display === 'grid') closeModal(); });
+
+    // 최초 진입 시 홈 노출 + 개정일 반영
+    document.getElementById('home').style.display = 'grid';
+    renderRevisionEverywhere();
+
+    // -------------------------
+    // 🔎 간단 셀프 테스트 (콘솔에서 확인)
+    // -------------------------
+    (function runSelfTests(){
+      const log = (...args)=>console.log('[TEST]', ...args);
+      const fail = (name, got)=>console.error('[TEST FAIL]', name, got);
+      try {
+        // backup state
+        const snapshot = JSON.parse(JSON.stringify({destKey: state.destKey, service: state.service, activeRoute: state.activeRoute}));
+
+        // 1) minami_osawa ALL은 두 계통이 병합되어야 함
+        state.destKey = 'minami_osawa'; state.activeRoute = 'ALL'; state.service = 'weekday';
+        const all = getTimesForState();
+        if (!(all.includes('06:20') && all.includes('06:35'))) throw new Error('minami_osawa ALL 병합 실패');
+
+        // 2) 계통별 필터 동작
+        state.activeRoute = '南６１';
+        const r61 = getTimesForState();
+        if (!r61.includes('06:20') || r61.includes('06:35')) throw new Error('南６１ 필터 실패');
+        state.activeRoute = '南６２';
+        const r62 = getTimesForState();
+        if (!r62.includes('06:35') || r62.includes('06:20')) throw new Error('南６２ 필터 실패');
+
+        // 3) upcomingQueue가 내일 첫차까지 보강
+        const list = ['01:00'];
+        const nearEnd = new Date(); nearEnd.setHours(23,59,50,0);
+        const q = upcomingQueue(list, nearEnd);
+        if (!(q[0] instanceof Date) || q[0].getDate() !== new Date(nearEnd.getTime()+24*3600*1000).getDate()) throw new Error('upcomingQueue 내일 보강 실패');
+
+        // 4) hashimoto byRoute 존재 & ALL 병합
+        state.destKey = 'hashimoto'; state.activeRoute = 'ALL';
+        const hAll = getTimesForState();
+        if (!hAll.length) throw new Error('hashimoto ALL 비어있음');
+
+        // restore state
+        state.destKey = snapshot.destKey; state.service = snapshot.service; state.activeRoute = snapshot.activeRoute;
+        log('기본 테스트 통과 ✅');
+      } catch (e) {
+        fail(e.message);
+      }
+    })();
+  </script>
+</body>
+</html>
